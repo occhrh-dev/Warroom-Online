@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>War Room - GitHub Version</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; }
+        .triage-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .btn { padding: 20px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; cursor: pointer; border: none; color: white; }
+        .red { background: #e74c3c; } .yellow { background: #f1c40f; color: black; }
+        .green { background: #2ecc71; } .black { background: #333; }
+        .log-box { background: rgba(0,0,0,0.3); margin: 20px; padding: 15px; border-radius: 10px; height: 200px; overflow-y: auto; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>🚨 War Room Real-time</h1>
+    <div id="status">เชื่อมต่อระบบ...</div>
+
+    <div class="triage-box">
+        <button class="btn red" onclick="updateTriage('red')">แดง: <span id="r">0</span></button>
+        <button class="btn yellow" onclick="updateTriage('yellow')">เหลือง: <span id="y">0</span></button>
+        <button class="btn green" onclick="updateTriage('green')">เขียว: <span id="g">0</span></button>
+        <button class="btn black" onclick="updateTriage('black')">ดำ: <span id="b">0</span></button>
+    </div>
+
+    <div class="log-box" id="logs"></div>
+
+    <script>
+    // 🚩 วางลิงก์ที่ก๊อปมาจาก Google Apps Script ตรงนี้ครับ
+    const API_URL = "https://script.google.com/macros/s/AKfycbw1MKCd5CFAKJO6D7dxsdB16ZA5R--hvpUvS00maosKx3meWjQLwzevgTJ1atnHzdm8/exec"; 
+
+    // ฟังก์ชันดึงยอด Triage ล่าสุด (อัปเดตทุก 5 วินาที)
+    async function refreshTriage() {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getState' })
+            });
+            const data = await response.json();
+            
+            // อัปเดตตัวเลขบนหน้าจอ
+            document.getElementById('r').innerText = data.triage.red;
+            document.getElementById('y').innerText = data.triage.yellow;
+            document.getElementById('g').innerText = data.triage.green;
+            document.getElementById('b').innerText = data.triage.black;
+        } catch (e) {
+            console.log("Error fetching data...");
+        }
+    }
+
+    // ฟังก์ชันบวกเลข (เมื่อคนกดปุ่มสีต่างๆ)
+    async function updateTriage(color) {
+        // โชว์ Loading นิดนึงให้รู้ว่ากดแล้ว
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'updateTriage', color: color, amount: 1 })
+            });
+            Swal.close();
+            refreshTriage(); // รีเฟรชยอดทันที
+        } catch (e) {
+            Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+        }
+    }
+
+    // ตั้งเวลาให้รีเฟรชยอดทุก 5 วินาทีอัตโนมัติ
+    setInterval(refreshTriage, 5000);
+    refreshTriage(); // รันครั้งแรกทันทีที่เปิดเว็บ
+</script>
+</body>
+</html>
