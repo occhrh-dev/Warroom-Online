@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Occ-Health War Room</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&family=Inter:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* =========================================
+           PART 1: GLOBAL STYLES (จาก stylesheet.html)
+           ========================================= */
+        :root { --primary: #1a73e8; --bg: #f0f2f5; --sidebar-w: 260px; }
+        
+        body { 
+            font-family: 'Inter', 'Roboto', 'Sarabun', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            /* พื้นหลัง Default (จะถูกแก้โดย Part 2) */
+            background-color: #f8f9fa; 
+            margin: 0; padding: 0; 
+            /* display: flex; <--- ปิดตัวนี้เพราะ War Room ไม่ใช้ Layout เดิม */
+            height: 100vh; 
+            overflow-x: hidden;
+        }
+
+        /* Helpers & Typography */
+        h1, h2, h3, .task-title, .num-input { letter-spacing: -0.02em; }
+        
+        /* Badge Styles (เอามาใช้ต่อได้) */
+        .badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+        .badge.urgent { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; } 
+        .badge.ok { background: #e8f5e9; color: #2e7d32; } 
+
+        /* ... (CSS อื่นๆ จาก stylesheet.html ถูกรวมมาโดยอัตโนมัติ) ... */
+
+
+        /* =========================================
+           PART 2: EMERGENCY WAR ROOM STYLES (Specific)
+           ========================================= */
+        :root {
+            /* Override สีเฉพาะหน้านี้ */
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --text-color: #ecf0f1;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        /* บังคับใช้ Theme มืดสำหรับ War Room */
+        body.emergency-mode {
+            background-color: var(--bg-color) !important;
+            background-image: none !important; /* ลบ Gradient เดิมทิ้ง */
+            color: var(--text-color);
+            display: block !important; /* แก้ Flex เดิม */
+        }
+
+        /* ปรับ Card ให้เข้ากับ Dark Mode */
+        .war-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .war-card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+
+        /* Scenes */
+        #scene_Login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+        
+        .login-box {
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 350px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #scene_Work {
+            display: none;
+            padding: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            padding-bottom: 80px; /* เผื่อที่ปุ่ม FAB */
+        }
+
+        /* Header Bar กะพริบ */
+        .header-bar {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--accent-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        /* Form Elements ปรับให้เข้ากับ Dark Mode */
+        input, select, textarea {
+            font-family: 'Sarabun', sans-serif;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.9); /* สีพื้นหลัง Input ให้สว่างนิดนึงจะอ่านง่าย */
+        }
+
+        button.btn-war {
+            font-family: 'Sarabun', sans-serif;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.btn-war:active { transform: scale(0.98); }
+
+        /* Triage Grid */
+        .triage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .triage-item { padding: 10px; border-radius: 8px; text-align: center; color: #333; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        .triage-item:active { transform: scale(0.95); }
+        .t-red { background: #ff4d4d; color: white; }
+        .t-yellow { background: #ffcc00; }
+        .t-green { background: #66cc66; color: white; }
+        .t-black { background: #333; color: white; border: 1px solid #555; }
+
+        /* Logs & Staff */
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .log-entry { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .staff-chip {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin: 3px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 50px; height: 50px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-size: 1.2rem; color: white; cursor: pointer; z-index: 100;
+        }
+    </style>
+</head>
+<body class="emergency-mode"> <div id="scene_Login">
+        <div class="login-box">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🚨</div>
+            <h1 style="margin:0; font-size:1.8rem;">WAR ROOM</h1>
+            <p style="color:#bdc3c7; margin-top:5px; margin-bottom: 20px;">ระบบบริหารจัดการภาวะฉุกเฉิน</p>
+            
+            <input type="text" id="loginName" placeholder="ชื่อ-สกุล (ภาษาไทย)">
+            <input type="password" id="loginPin" placeholder="รหัส PIN (หรือ 4 ตัวท้ายเบอร์โทร)" inputmode="numeric">
+            
+            <button class="btn-war" onclick="doLogin()">เข้าสู่ระบบ</button>
+            <div id="loginStatus" style="margin-top:10px; color:#e74c3c; font-size:0.9rem;"></div>
+        </div>
+    </div>
+
+    <div id="scene_Work">
+        
+        <div class="header-bar">
+            <h2 style="margin:0;">🚨 <span id="emerMessage">LOADING...</span></h2>
+            <div id="emerStatus" style="margin-top:5px; font-size:0.9rem; opacity:0.9;">รอการเชื่อมต่อ...</div>
+        </div>
+
+        <div class="war-card">
+            <div class="war-card-title"><i class="fas fa-id-card"></i> สถานะผู้ใช้งาน</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:bold; font-size:1.1rem;" id="userNameDisplay">-</div>
+                    <div style="font-size:0.85rem; color:#aaa;" id="userRoleDisplay">เจ้าหน้าที่</div>
+                </div>
+                <button style="width:auto; padding:5px 15px; font-size:0.85rem; background:#555; color:white; border:none; border-radius:5px; cursor:pointer;" onclick="updateLocation()">
+                    <i class="fas fa-map-marker-alt"></i> แจ้งจุด
+                </button>
+            </div>
+        </div>
+
+        <div class="war-card">
+            <div class="war-card-title">
+                <i class="fas fa-user-injured"></i> รายงานผู้บาดเจ็บ (Triage)
+            </div>
+            <div class="triage-grid">
+                <div class="triage-item t-red" onclick="addTriage('red')">
+                    แดง<br><span id="count_red" style="font-size:1.5rem;">0</span>
+                </div>
+                <div class="triage-item t-yellow" onclick="addTriage('yellow')">
+                    เหลือง<br><span id="count_yellow" style="font-size:1.5rem;">0</span>
+                </div>
+                <div class="triage-item t-green" onclick="addTriage('green')">
+                    เขียว<br><span id="count_green" style="font-size:1.5rem;">0</span>
+                </div>
+                <div class="triage-item t-black" onclick="addTriage('black')">
+                    ดำ<br><span id="count_black" style="font-size:1.5rem;">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="war-card">
+            <div class="war-card-title"><i class="fas fa-tasks"></i> ภารกิจ (Checklist)</div>
+            <div id="checklistContainer"></div>
+            
+            <div style="margin-top:10px; display:flex; gap:5px;">
+                <input type="text" id="newCustomTask" placeholder="เพิ่มภารกิจพิเศษ..." style="margin:0;">
+                <button onclick="addCustomTask()" style="width:50px; background:var(--success-color); color:white; border:none; border-radius:5px;"><i class="fas fa-plus"></i></button>
+            </div>
+        </div>
+
+        <div class="war-card">
+            <div class="war-card-title"><i class="fas fa-history"></i> Timeline / สั่งการ</div>
+            <div id="logContainer" class="log-container"></div>
+            <div style="margin-top:10px; display:flex; gap:5px;">
+                <input type="text" id="msgInput" placeholder="รายงานสถานการณ์..." style="margin:0;">
+                <button onclick="sendLog()" style="width:60px; background:var(--primary); color:white; border:none; border-radius:5px;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <div class="war-card">
+            <div class="war-card-title"><i class="fas fa-users"></i> กำลังพลในระบบ</div>
+            <div id="staffListContainer"></div>
+        </div>
+
+        <div style="text-align:center; color:#7f8c8d; font-size:0.8rem; margin-top:20px;">
+            Occ-Health Data Hub &copy; 2026
+        </div>
+
+    </div>
+
+    <div class="fab" onclick="fetchData()">
+        <i class="fas fa-sync-alt"></i>
+    </div>
+
+    <script>
+        let CurrentUser = { name: "", role: "Staff" };
+        let PollingInterval = null;
+
+        function doLogin() {
+            const name = document.getElementById('loginName').value.trim();
+            const pin = document.getElementById('loginPin').value.trim();
+            const statusDiv = document.getElementById('loginStatus');
+
+            if (!name || !pin) {
+                statusDiv.innerText = "กรุณากรอกข้อมูลให้ครบ";
+                return;
+            }
+
+            statusDiv.innerText = "กำลังตรวจสอบ...";
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    if (response === "WrongPIN") {
+                        statusDiv.innerText = "รหัส PIN ไม่ถูกต้อง!";
+                    } else {
+                        CurrentUser.name = name;
+                        document.getElementById('scene_Login').style.display = 'none';
+                        document.getElementById('scene_Work').style.display = 'block';
+                        document.getElementById('userNameDisplay').innerText = name;
+                        fetchData();
+                        PollingInterval = setInterval(fetchData, 10000);
+                    }
+                })
+                .withFailureHandler(function(e) { statusDiv.innerText = "เกิดข้อผิดพลาด: " + e; })
+                .submitEmergencyAttendance(name, pin, "เจ้าหน้าที่");
+        }
+
+        function fetchData() {
+            const btn = document.querySelector('.fab i');
+            btn.classList.add('fa-spin');
+            google.script.run.withSuccessHandler(renderUI).getEmergencyState();
+        }
+
+        function renderUI(data) {
+            document.querySelector('.fab i').classList.remove('fa-spin');
+
+            if (!data.isActive) {
+                Swal.fire('จบภารกิจ', 'ระบบปิดโหมดฉุกเฉินแล้ว', 'info').then(() => location.reload());
+                return;
+            }
+
+            document.getElementById('emerMessage').innerText = data.message || "เหตุฉุกเฉิน";
+            document.getElementById('emerStatus').innerText = "Last Update: " + new Date().toLocaleTimeString();
+
+            // Triage
+            google.script.run.withSuccessHandler(updateTriageUI).getTriageStats();
+
+            // Checklist
+            const listDiv = document.getElementById('checklistContainer');
+            listDiv.innerHTML = "";
+            const allTasks = [...(data.checklist || []), ...(data.customTasks || [])];
+            
+            if (allTasks.length === 0) listDiv.innerHTML = "<div style='text-align:center; color:#aaa;'>- ไม่มีรายการ -</div>";
+            else {
+                allTasks.forEach((item, index) => {
+                    if (item.name) { 
+                         let checked = item.status ? 'checked' : '';
+                         let html = `
+                            <div style="display:flex; align-items:center; gap:10px; padding:5px; background:rgba(255,255,255,0.05); margin-bottom:5px; border-radius:5px;">
+                                <input type="checkbox" ${checked} onchange="toggleCustomTask(${index}, this.checked)">
+                                <span style="flex:1; ${checked ? 'text-decoration:line-through; color:#aaa;' : ''}">${item.name}</span>
+                                <i class="fas fa-trash" style="color:#e74c3c; cursor:pointer;" onclick="delCustomTask(${index})"></i>
+                            </div>`;
+                         listDiv.innerHTML += html;
+                    }
+                });
+            }
+
+            // Logs
+            const logDiv = document.getElementById('logContainer');
+            let logHtml = "";
+            data.logs.forEach(log => {
+                logHtml += `
+                    <div class="log-entry">
+                        <div style="font-weight:bold; color:#3498db;">${log.time}</div>
+                        <div>${log.msg}</div>
+                        ${log.imgUrl ? `<a href="${log.imgUrl}" target="_blank" style="color:#f1c40f;">[ดูรูปประกอบ]</a>` : ''}
+                    </div>`;
+            });
+            logDiv.innerHTML = logHtml;
+
+            // Staff
+            const staffDiv = document.getElementById('staffListContainer');
+            let staffHtml = "";
+            data.attendance.forEach(person => {
+                staffHtml += `
+                    <span class="staff-chip">
+                        <i class="fas fa-user-circle"></i> ${person.name} 
+                        <span style="font-size:0.7em; opacity:0.7;">(${person.location || '?'})</span>
+                    </span>`;
+            });
+            staffDiv.innerHTML = staffHtml || "<div style='color:#aaa;'>- ว่างเปล่า -</div>";
+        }
+
+        function updateTriageUI(stats) {
+            document.getElementById('count_red').innerText = stats.red;
+            document.getElementById('count_yellow').innerText = stats.yellow;
+            document.getElementById('count_green').innerText = stats.green;
+            document.getElementById('count_black').innerText = stats.black;
+        }
+
+        function addTriage(color) { google.script.run.withSuccessHandler(updateTriageUI).submitTriageReport(color, 1); }
+        
+        function sendLog() {
+            const input = document.getElementById('msgInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const fullMsg = `[${CurrentUser.name}]: ${msg}`;
+            input.value = ""; 
+            google.script.run.withSuccessHandler(renderUI).addCommanderLog(fullMsg);
+        }
+
+        function updateLocation() {
+            Swal.fire({
+                title: 'ระบุตำแหน่ง',
+                input: 'text',
+                inputPlaceholder: 'เช่น จุดคัดกรอง, ชั้น 2',
+                showCancelButton: true
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    google.script.run.updateStaffLocation(CurrentUser.name, result.value);
+                }
+            });
+        }
+
+        function addCustomTask() {
+            const input = document.getElementById('newCustomTask');
+            const val = input.value.trim();
+            if(!val) return;
+            input.value = "";
+            google.script.run.withSuccessHandler(() => fetchData()).addCustomTask(val);
+        }
+
+        function toggleCustomTask(idx, checked) { google.script.run.updateCustomTask(idx, checked); }
+        function delCustomTask(idx) { if(confirm('ลบภารกิจนี้?')) google.script.run.withSuccessHandler(() => fetchData()).deleteCustomTask(idx); }
+
+    </script>
+</body>
+</html>
